@@ -20,6 +20,7 @@ class Serializer(base.Serializer):
         self.excludes = None
         self.relations = None
         self.extras = None
+        self.use_natural_keys = None
         super(Serializer, self).__init__(*args, **kwargs)
 
     def serialize(self, queryset, **options):
@@ -37,6 +38,7 @@ class Serializer(base.Serializer):
         self.excludes = options.get("excludes", [])
         self.relations = options.get("relations", [])
         self.extras = options.get("extras", [])
+        self.use_natural_keys = options.get("use_natural_keys", False)
 
         self.start_serialization()
         for obj in queryset:

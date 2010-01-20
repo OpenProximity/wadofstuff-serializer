@@ -89,13 +89,17 @@ class Serializer(base.Serializer):
                     **options)[0]
             else:
                 # emulate the original behaviour and serialize the pk value
-                if field.rel.field_name == related._meta.pk.name:
-                    # Related to remote object via primary key
-                    related = related._get_pk_val()
+                if self.use_natural_keys and hasattr(related, 'natural_key'):
+                    related = related.natural_key()
                 else:
-                    # Related to remote object via other field
-                    related = getattr(related, field.rel.field_name)
-                self._fields[fname] = smart_unicode(related, strings_only=True)
+                    if field.rel.field_name == related._meta.pk.name:
+                        # Related to remote object via primary key
+                        related = related._get_pk_val()
+                    else:
+                        # Related to remote object via other field
+                        related = smart_unicode(getattr(related,
+                            field.rel.field_name), strings_only=True)
+                self._fields[fname] = related
         else:
             self._fields[fname] = smart_unicode(related, strings_only=True)
 
@@ -119,9 +123,13 @@ class Serializer(base.Serializer):
             else:
                 # emulate the original behaviour and serialize to a list of 
                 # primary key values
-                self._fields[fname] = [
-                    smart_unicode(related._get_pk_val(), strings_only=True)
-                       for related in getattr(obj, fname).iterator()]
+                if self.use_natural_keys and hasattr(field.rel.to, 'natural_key'):
+                    m2m_value = lambda value: value.natural_key()
+                else:
+                    m2m_value = lambda value: smart_unicode(
+                        value._get_pk_val(), strings_only=True)
+                self._fields[fname] = [m2m_value(related)
+                    for related in getattr(obj, fname).iterator()]
 
     def getvalue(self):
         """
