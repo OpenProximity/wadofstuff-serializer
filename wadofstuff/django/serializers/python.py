@@ -2,7 +2,7 @@
 Full Python serializer for Django.
 """
 import base
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_unicode, is_protected_type
 from django.core.serializers.python import Deserializer as PythonDeserializer
 
 class Serializer(base.Serializer):
@@ -61,8 +61,14 @@ class Serializer(base.Serializer):
         """
         Called to handle each individual (non-relational) field on an object.
         """
-        self._fields[field.name] = smart_unicode(getattr(obj, field.name),
-            strings_only=True)
+        value = field._get_val_from_obj(obj)
+        # Protected types (i.e., primitives like None, numbers, dates,
+        # and Decimals) are passed through as is. All other values are
+        # converted to string first.
+        if is_protected_type(value):
+            self._fields[field.name] = value
+        else:
+            self._fields[field.name] = field.value_to_string(obj)
 
     def handle_fk_field(self, obj, field):
         """
@@ -98,24 +104,24 @@ class Serializer(base.Serializer):
         Called to handle a ManyToManyField.
         Recursively serializes relations specified in the 'relations' option.
         """
-        fname = field.name
-        if fname in self.relations:
-            # perform full serialization of M2M
-            serializer = Serializer()
-            options = {}
-            if isinstance(self.relations, dict):
-                if isinstance(self.relations[fname], dict):
-                    options = self.relations[fname]
-            self._fields[fname] = [
-                serializer.serialize([related], **options)[0]
-                   for related in getattr(obj, fname).iterator()]
-        else:
-            # emulate the original behaviour and serialize to a list of 
-            # primary key values
-            self._fields[fname] = [
-                smart_unicode(related._get_pk_val(), strings_only=True)
-                   for related in getattr(obj, fname).iterator()]
-
+        if field.rel.through._meta.auto_created:
+            fname = field.name
+            if fname in self.relations:
+                # perform full serialization of M2M
+                serializer = Serializer()
+                options = {}
+                if isinstance(self.relations, dict):
+                    if isinstance(self.relations[fname], dict):
+                        options = self.relations[fname]
+                self._fields[fname] = [
+                    serializer.serialize([related], **options)[0]
+                       for related in getattr(obj, fname).iterator()]
+            else:
+                # emulate the original behaviour and serialize to a list of 
+                # primary key values
+                self._fields[fname] = [
+                    smart_unicode(related._get_pk_val(), strings_only=True)
+                       for related in getattr(obj, fname).iterator()]
 
     def getvalue(self):
         """
