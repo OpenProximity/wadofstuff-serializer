@@ -17,6 +17,7 @@ class Serializer(PythonSerializer):
         self.options.pop('excludes', None)
         self.options.pop('relations', None)
         self.options.pop('extras', None)
+        self.options.pop('use_natural_keys', None)
         simplejson.dump(self.objects, self.stream, cls=DjangoJSONEncoder,
             **self.options)
 
