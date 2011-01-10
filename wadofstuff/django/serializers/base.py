@@ -33,12 +33,12 @@ class Serializer(base.Serializer):
                 Methods cannot take arguments.
         """
         self.options = options
-        self.stream = options.get("stream", StringIO())
-        self.fields = options.get("fields", [])
-        self.excludes = options.get("excludes", [])
-        self.relations = options.get("relations", [])
-        self.extras = options.get("extras", [])
-        self.use_natural_keys = options.get("use_natural_keys", False)
+        self.stream = options.pop("stream", StringIO())
+        self.fields = options.pop("fields", [])
+        self.excludes = options.pop("excludes", [])
+        self.relations = options.pop("relations", [])
+        self.extras = options.pop("extras", [])
+        self.use_natural_keys = options.pop("use_natural_keys", False)
 
         self.start_serialization()
         for obj in queryset:
