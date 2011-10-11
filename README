@@ -1,3 +1,7 @@
+Note: This is a clone of [1] modified with some patches from OpenProximity
+
+[1] http://code.google.com/p/wadofstuff/source/browse/#svn%2Ftrunk%2Fpython%2Fserializer
+
 Extended Django Serializer Module
 =================================
 
