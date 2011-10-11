@@ -5,6 +5,13 @@ import base
 from django.utils.encoding import smart_unicode, is_protected_type
 from django.core.serializers.python import Deserializer as PythonDeserializer
 
+__models = dict()
+
+def _Serializer_get_class_unicode(meta):
+    if meta not in __models:
+        __models[meta] = smart_unicode(meta)
+    return __models[meta]
+
 class Serializer(base.Serializer):
     """
     Python serializer for Django modelled after Ruby on Rails.
@@ -48,7 +55,7 @@ class Serializer(base.Serializer):
         Called when serializing of an object ends.
         """
         self.objects.append({
-            "model"  : smart_unicode(obj._meta),
+            "model"  : __get_class_unicode(obj._meta),
             "pk"     : smart_unicode(obj._get_pk_val(), strings_only=True),
             "fields" : self._fields
         })
@@ -82,6 +89,7 @@ class Serializer(base.Serializer):
                 # perform full serialization of FK
                 serializer = Serializer()
                 options = {}
+                options['subclass'] = self.subclass
                 if isinstance(self.relations, dict):
                     if isinstance(self.relations[fname], dict):
                         options = self.relations[fname]
@@ -117,6 +125,7 @@ class Serializer(base.Serializer):
                 if isinstance(self.relations, dict):
                     if isinstance(self.relations[fname], dict):
                         options = self.relations[fname]
+                options['subclass'] = self.subclass
                 self._fields[fname] = [
                     serializer.serialize([related], **options)[0]
                        for related in getattr(obj, fname).iterator()]

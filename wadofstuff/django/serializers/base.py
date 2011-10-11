@@ -6,6 +6,12 @@ except ImportError:
 
 from django.core.serializers import base
 
+def get_subclass(object):
+    for related in object._meta.get_all_related_objects():
+        if type(object) in related.model._meta.get_parent_list():
+            if hasattr(object,related.var_name):
+                return get_subclass(getattr(object, related.var_name))
+    return object
 
 class Serializer(base.Serializer):
     """Serializer for Django models inspired by Ruby on Rails serializer.
@@ -21,6 +27,7 @@ class Serializer(base.Serializer):
         self.relations = None
         self.extras = None
         self.use_natural_keys = None
+        self.subclass = False
         super(Serializer, self).__init__(*args, **kwargs)
 
     def serialize(self, queryset, **options):
@@ -31,6 +38,8 @@ class Serializer(base.Serializer):
             relations - list of related fields to be fully serialized.
             extras - list of attributes and methods to include.
                 Methods cannot take arguments.
+            subclass - binary variable set to true if you want to get the 
+                subclass before serializing.
         """
         self.options = options
         self.stream = options.pop("stream", StringIO())
@@ -39,11 +48,14 @@ class Serializer(base.Serializer):
         self.relations = options.pop("relations", [])
         self.extras = options.pop("extras", [])
         self.use_natural_keys = options.pop("use_natural_keys", False)
+        self.subclass = options.pop("subclass", False)
 
         self.start_serialization()
         for obj in queryset:
+            if self.subclass is True:
+                obj = get_subclass(obj)
             self.start_object(obj)
-            for field in obj._meta.local_fields:
+            for field in obj._meta.fields:
                 attname = field.attname
                 if field.serialize:
                     if field.rel is None:
