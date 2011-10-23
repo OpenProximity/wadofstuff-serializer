@@ -12,9 +12,9 @@ ChangeLog = \
 LONG_DESCRIPTION = README + ChangeLog
 
 setup(
-    name='wadofstuff-django-serializers',
+    name='wadofstuff-django-serializers-op',
     version=wadofstuff.django.serializers.__version__,
-    description='Extended serializers for Django.',
+    description='Extended serializers for Django modified for OpenProximity',
     long_description=LONG_DESCRIPTION,
     author='Matthew Flanagan',
     author_email='mattimustang@gmail.com',
